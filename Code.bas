@@ -224,8 +224,9 @@ End Sub
 Private Sub Create_All_Buttons()
     '''' Create all buttons in the worksheet '''
     Call Create_Sort_All_Button
-    Call Create_Lines_Button
+    Call Create_Hide_Low_Button
     Call Create_Sort_Time_Button
+    Call Create_Lines_Button
     Call Create_Hide_Dependence_Button
     Call Create_Show_All_Button
     Call Create_Hide_Buttons
@@ -264,6 +265,38 @@ Private Sub Create_Sort_All_Button()
 
 End Sub
 
+Private Sub Create_Hide_Low_Button()
+    ''' Create the "hide low" button '''
+    ' This button hides all tasks that are considered less important, meaning those with a value below 100.
+    ' You can change this threshold in Hide_Low().
+
+    Dim ws As Worksheet
+    Dim targetCell As Range
+    Dim shp As Shape
+
+    Set ws = ActiveSheet
+    Set targetCell = ws.Range("B1")
+
+    ' Delete existing shape if it exists
+    On Error Resume Next
+    ws.Shapes("Hide_Low").Delete
+    On Error GoTo 0
+
+    ' Add a button
+    Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
+        targetCell.Left, targetCell.Top, targetCell.Width, targetCell.Height)
+
+    With shp
+        .Name = "Hide_Low"
+        .TextFrame2.TextRange.Text = "hide low"
+        .OnAction = "Hide_Low"
+    End With
+
+    ' Apply global style
+    Call StyleMyShape(shp)
+
+End Sub
+
 Private Sub Create_Lines_Button()
     ''' Create the "lines" button '''
     ' This button will make a dotted line between the tasks
@@ -273,7 +306,7 @@ Private Sub Create_Lines_Button()
     Dim shp As Shape
 
     Set ws = ActiveSheet
-    Set targetCell = ws.Range("B1")
+    Set targetCell = ws.Range("D1")
 
     ' Delete existing shape if it exists
     On Error Resume Next
@@ -632,6 +665,23 @@ Private Sub Color_Importance()
             ' cell.Interior.Color = RGB(255, 255, 255)  ' White
         End If
     Next cell
+
+End Sub
+
+Sub Hide_Low()
+    ''' Hide tasks with low importance (<100) '''
+
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim col As Long
+
+    Set ws = ActiveSheet
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).row
+
+    ' Apply filter starting at row 3, column 2
+    ws.Range(ws.Cells(3, 2), ws.Cells(lastRow, 2)).AutoFilter _
+        Field:=2, _
+        Criteria1:="<100"
 
 End Sub
 

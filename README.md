@@ -8,7 +8,7 @@ and emotional effort. It provides a clear structure with buttons to sort and
 filter your tasks. Color highlights make it easy to spot quick tasks,
 high-priority items, or tasks from specific categories.
 
-![Picture of to-do list](TODO_figure.png "To-do list")
+![Picture of to-do list](TODO_figure.png?version=2 "To-do list")
 
 ## Columns of the to-do list
 
@@ -34,10 +34,12 @@ Several buttons are added to help you manage tasks easily:
     - Fills empty Hide cells with `0`
     - Highlights tasks due today in red
 
-- "lines": Creates dotted lines between the tasks. Should be run after major changes to remove unneeded lines and add new ones.
-    If you don't want any lines, remove them manually.
+- "hide low": Hide tasks with low importance (<100).
 
 - "sort time": Sorts only by the `Time needed` column.
+
+- "lines": Creates dotted lines between the tasks. Should be run after major changes to remove unneeded lines and add new ones.
+    If you don't want any lines, remove them manually.
 
 - "hide dependence": Hides all tasks with a non-empty `Dependence` field.
 
