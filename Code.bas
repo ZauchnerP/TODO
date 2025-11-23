@@ -24,10 +24,18 @@ Sub Create_TODO_sheet()
     ' Create buttons
     Call Create_All_Buttons
 
+    ' Save numbers as text in E (needed for sorting)
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    ws.Range("E:E").NumberFormat = "@"
+
+    ' Activate Today-formatting
+    Call Today_Red
+
     ' Add filter
-    Range("A2:H2").Select
-    Range("H2").Activate
-    Selection.AutoFilter
+    With ActiveSheet
+        .Range("A2:H2").AutoFilter
+    End With
 
 End Sub
 
@@ -78,7 +86,6 @@ Private Sub Create_TODO_Header()
         End With
     Next i
 
-
     ' Auto-fit row height to handle line breaks
     ws.Rows(2).EntireRow.AutoFit
 
@@ -99,6 +106,7 @@ Private Sub Create_TODO_Header()
     End With
 
     ' Fit width of columns A to H
+    Dim col As Range
     For Each col In ws.Range("A:H").Columns
         col.AutoFit
         col.ColumnWidth = col.ColumnWidth + 3
@@ -112,7 +120,7 @@ Private Sub Create_TODO_Header()
 End Sub
 
 Private Sub Create_Today_Header()
-    ''' Fill the headers in row 2 '''
+    ''' Fill the headers in row 1 '''
 
     Dim ws As Worksheet
     Set ws = ActiveSheet
@@ -158,7 +166,23 @@ Private Sub StyleMyShape(shp As Shape)
 
     End With
 
+End Sub
 
+Private Sub AddBottomBorderAfterRow1()
+    ''' Add a border to the header in the TODAY sheet '''
+
+    Dim ws As Worksheet
+    Dim targetRange As Range
+
+    Set ws = ActiveSheet
+
+    Set targetRange = ws.Range(ws.Cells(1, 1), ws.Cells(1, 3))
+
+    With targetRange.Borders(xlEdgeBottom)
+        .LineStyle = xlContinuous
+        .Weight = xlMedium
+        .Color = RGB(0, 0, 0) ' black
+    End With
 End Sub
 
 Private Sub AddBottomBorderAfterRow2()
@@ -181,26 +205,8 @@ Private Sub AddBottomBorderAfterRow2()
     End With
 End Sub
 
-Private Sub AddBottomBorderAfterRow1()
-    ''' Add a border to the header in the TODAY sheet '''
-
-    Dim ws As Worksheet
-    Dim lastCol As Long
-    Dim targetRange As Range
-
-    Set ws = ActiveSheet
-
-    Set targetRange = ws.Range(ws.Cells(1, 1), ws.Cells(1, 3))
-
-    With targetRange.Borders(xlEdgeBottom)
-        .LineStyle = xlContinuous
-        .Weight = xlMedium
-        .Color = RGB(0, 0, 0) ' black
-    End With
-End Sub
-
 Private Sub Freeze_R_1_2()
-    ''' Freeze the first two rows '''
+    ''' Freeze the first two rows in a "TODO" sheet '''
 
     With ActiveWindow
         .SplitColumn = 0
@@ -210,7 +216,7 @@ Private Sub Freeze_R_1_2()
 End Sub
 
 Private Sub Freeze_R_1()
-    ''' Freeze the first row '''
+    ''' Freeze the first row in a "Today" sheet'''
 
     With ActiveWindow
         .SplitColumn = 0
@@ -219,7 +225,9 @@ Private Sub Freeze_R_1()
     End With
 End Sub
 
-' Create buttons
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+' Buttons
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 Private Sub Create_All_Buttons()
     '''' Create all buttons in the worksheet '''
@@ -310,7 +318,7 @@ Private Sub Create_Lines_Button()
 
     ' Delete existing shape if it exists
     On Error Resume Next
-    ws.Shapes("Make_Lines").Delete
+    ws.Shapes("Make_Lines_TODO").Delete
     On Error GoTo 0
 
     ' Add a button
@@ -318,9 +326,9 @@ Private Sub Create_Lines_Button()
         targetCell.Left, targetCell.Top, targetCell.Width, targetCell.Height)
 
     With shp
-        .Name = "Make_Lines"
+        .Name = "Make_Lines_TODO"
         .TextFrame2.TextRange.Text = "lines"
-        .OnAction = "Make_Lines"
+        .OnAction = "Make_Lines_TODO"
     End With
 
     ' Apply global style
@@ -496,35 +504,39 @@ Private Sub Create_Hide_Buttons()
         .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(0, 0, 0)
         .Fill.ForeColor.RGB = RGB(220, 220, 220)
         .Line.ForeColor.RGB = RGB(0, 0, 0)
-        .OnAction = "Hide_Set0"
+        .OnAction = "Set_Hide_0"
         .TextFrame2.VerticalAnchor = msoAnchorMiddle
         .TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
     End With
 End Sub
 
-
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ' Actions
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-Sub Main_Sort()
+Private Sub Main_Sort()
     ''' Main function to sort the document '''
     ' This function will sort the data in the worksheet based on columns B, C, D, and E
 
-    EnableEvents = True
+    ' Fill column E
     Call Replace_Empty_Dependence
+    ' Fill column H
     Call Insert_0_Hide
+
+    ' Sort the TODO list
     Call Sort_TODO
+
+    ' Colors
     Call Importance_Zero
     Call Color_Category
     Call Color_Importance
-    Call Today_Red
+
 
 End Sub
 
 Private Sub Sort_TODO()
-    ''' Sort the data in the worksheet based on columns B C D and I '''
-    ' I. e. importance, time, emotion, dependence in ascending order
+    ''' Sort the sheet by columns B, C, D, and E
+    ' (importance, time, emotion, dependence), ascending. '''
 
     ' Set worksheet and lastRow
     Dim ws As Worksheet
@@ -575,7 +587,7 @@ Private Sub Sort_TODO()
     End With
 End Sub
 
-Sub Hide_Dependence()
+Private Sub Hide_Dependence()
     ''' Hide all rows that are dependent on another action ("Dependence" column)  '''
 
     ' Set worksheet and lastRow
@@ -595,21 +607,28 @@ Sub Hide_Dependence()
 End Sub
 
 Private Sub Color_Importance()
-    ''' Colorize column B (importance) and C (time needed) cells if a task is important or quick to do'''
+    ''' 
+    ' Colorize column B (importance) and C (time needed) cells if 
+    ' a task is important or quick to do.
     ' Both are just colorized if they do not depend on other tasks.
-    ' Time is just colorized when the taask does not require too much emotional effort.
+    ' Time is just colorized when the task does not require too much emotional effort.
+    '''
 
-    Dim ws As Worksheet
+    Dim ws As Worksheet    
+    Set ws = ActiveSheet
+
     Dim rng As Range
     Dim cell As Range
-    Set ws = ActiveSheet
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).row
 
     ' Set to white first
     ws.Columns("B").Interior.Color = RGB(255, 255, 255)
     ws.Columns("C").Interior.Color = RGB(255, 255, 255)
 
     ''' COLOR column B: Importance ''''
-    Set rng = ws.Range("B2:B60")
+    Set rng = ws.Range("B3:B" & lastRow)
 
     ' Loop through each cell in the range
     For Each cell In rng
@@ -626,7 +645,7 @@ Private Sub Color_Importance()
                     cell.Interior.Color = RGB(255, 255, 255)  ' White
 
         Else
-            ' Clear the interior color (not needed, because of interdepence with other functions)
+            ' Clear the interior color (not needed because of interdepence with other functions)
             ' cell.Interior.Color = RGB(255, 255, 255)  ' White
         End If
 
@@ -634,7 +653,7 @@ Private Sub Color_Importance()
 
     ''' COLOR column C: Time ''''
     ' Time is just colorized if it does not take too much emotional effort
-    Set rng = ws.Range("C2:C60")
+    Set rng = ws.Range("C3:C" & lastRow)
 
     ' Loop through each cell in the range
     For Each cell In rng
@@ -668,28 +687,28 @@ Private Sub Color_Importance()
 
 End Sub
 
-Sub Hide_Low()
+Private Sub Hide_Low()
     ''' Hide tasks with low importance (<100) '''
 
     Dim ws As Worksheet
     Dim lastRow As Long
-    Dim col As Long
 
     Set ws = ActiveSheet
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).row
 
     ' Apply filter starting at row 3, column 2
-    ws.Range(ws.Cells(3, 2), ws.Cells(lastRow, 2)).AutoFilter _
-        Field:=2, _
-        Criteria1:="<100"
+    ws.Range("A3:H" & lastRow).AutoFilter _
+            Field:=2, _
+            Criteria1:="<100"
 
 End Sub
 
-Sub Make_Lines()
+Private Sub Make_Lines_TODO()
     ''' Clear existing bottom borders and reapply dotted grey ones for non-empty rows '''
 
     Dim ws As Worksheet
     Dim lastRow As Long, r As Long
+    Dim lastRowDelete As Long
     Dim rng As Range
 
     Set ws = ActiveSheet
@@ -719,6 +738,7 @@ Private Sub Make_Lines_Today()
 
     Dim ws As Worksheet
     Dim lastRow As Long, r As Long
+    Dim lastRowDelete As Long
     Dim rng As Range
 
     Set ws = ActiveSheet
@@ -743,7 +763,7 @@ Private Sub Make_Lines_Today()
     Next r
 End Sub
 
-Sub Sort_Time()
+Private Sub Sort_Time()
     ''' Sort the data in the worksheet based on column C (time) '''
 
     ' Set worksheet and lastRow
@@ -752,9 +772,6 @@ Sub Sort_Time()
 
     Dim lastRow As Long
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).row
-
-    ' Select the range (these columns will be sorted)
-    ws.Columns("A:H").Select
 
     ' Clear any existing sort fields to start fresh
     ws.Sort.SortFields.Clear
@@ -778,7 +795,7 @@ Sub Sort_Time()
 
 End Sub
 
-Sub Reset_Filters()
+Private Sub Reset_Filters()
     ''' Reset all filters in the worksheet without deleting them '''
 
     Dim ws As Worksheet
@@ -799,22 +816,20 @@ Sub Reset_Filters()
     End If
 End Sub
 
-Sub Hide()
-    ''' Hide all rows that have the value 0 in the "Hide" column '''
+Private Sub Hide()
+    ''' Hide all rows that have the value 1 in the "Hide" column '''
 
     Dim lastRow As Long
     lastRow = ActiveSheet.Cells(ActiveSheet.Rows.Count, "A").End(xlUp).row
 
-    With ActiveSheet.Range("A2:H" & lastRow)  ' TODO check if correct
+    With ActiveSheet.Range("A2:H" & lastRow)
         .AutoFilter _
             Field:=8, _
-            Criteria1:="<>=", _
-            Operator:=xlAnd, _
-            Criteria2:="0"
+            Criteria1:="<>" & 1
     End With
 End Sub
 
-Sub Hide_Set0()
+Private Sub Set_Hide_0()
     ''' Set all 1 in the "Hide" column to 0  '''
     ' Caution: this will only set the value 1 to 0 if it is not hidden '''
 
@@ -827,7 +842,7 @@ Sub Hide_Set0()
     ws.Range("H3:H" & lastRow).Value = "0"
 End Sub
 
-Sub Color_Category()
+Private Sub Color_Category
     ''' Colorize the rows depending on the categories in column A  '''
 
     Dim ws As Worksheet
@@ -866,7 +881,7 @@ End Sub
 
 Private Sub Replace_Empty_Dependence()
     ''' Fills column E (dependence) with "." wherever column A (category) has a value.
-    ' We need this for sorting column E
+    ' We need this for sorting column E. """
 
     Dim ws As Worksheet
     Dim lastRow As Long, r As Long
@@ -882,8 +897,9 @@ Private Sub Replace_Empty_Dependence()
 End Sub
 
 Private Sub Insert_0_Hide()
-    ''' Fills column H (hide) with "0" wherever column A (category) has a value.
-    ' We need this for sorting this column
+    ''' Fills column H ("Hide") with a 0 in every row
+    ' where column A ("Category") is not empty.
+    ' We need this for sorting column H. """
 
     Dim ws As Worksheet
     Dim lastRow As Long, r As Long
@@ -900,40 +916,36 @@ Private Sub Insert_0_Hide()
 End Sub
 
 Private Sub Today_Red()
-    ''' Colorize the rows in column G (When) that are equal to today '''
-
-    Dim Today As Date
-    Today = Date ' This is needed so that it works with all language settings
+    ''' Apply conditional formatting to column G ("When") in the active TODO sheet.
+    ' After this procedure is run once within Create_TODO_sheet, 
+    ' any cell in column G that contains today's date will be 
+    ' highlighted automatically when entered.
+    '''
+    Dim fc As FormatCondition
 
     With ActiveSheet.Columns("G")
-        ' Set format condition to today
-        .FormatConditions.Add _
+        .FormatConditions.Delete
+        
+        Set fc = .FormatConditions.Add( _
             Type:=xlCellValue, _
             Operator:=xlEqual, _
-            Formula1:=Today
+            Formula1:="=" & CLng(Date))
 
-        ' Text color
-        With .FormatConditions(.FormatConditions.Count).Font
-            .Color = -16383844 ' Dark red color
-        End With
-
-        ' Background cell color
-        With .FormatConditions(.FormatConditions.Count).Interior
-            .PatternColorIndex = xlAutomatic
-            .Color = 13551615  ' Light red/pinkish
-        End With
-
+        fc.Font.Color = -16383844
+        fc.Interior.Color = 13551615
     End With
+
 End Sub
 
 Private Sub Importance_Zero()
-    ''' Colorize the rows when importance is 0 to light grey '''
+    ''' Colors an entire table row in light grey if the value in the
+    ' "Importance" column is equal to 0. '''
 
     ' Set worksheet and lastRow
     Dim ws As Worksheet
     Set ws = ActiveSheet
 
-    Dim lastRow As Long
+    Dim lastRow As Long, r As Long
     lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).row
 
     For r = 3 To lastRow
@@ -962,31 +974,32 @@ Private Sub Background_White()
     ws.Cells.Interior.Color = RGB(255, 255, 255)
 End Sub
 
-
-
-Sub Clean_Today()
+Private Sub Clean_Today()
     ''' Clean the "Today" sheet '''
     ' Removes all entries and formatting from the "Today" sheet
 
-    Rows("2:28").Select
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
 
     ' White background
     Call Background_White
-
+    
     ' Black font
-    With Selection.Font
+    With ws.Rows("2:28").Font
         .ColorIndex = xlAutomatic
         .TintAndShade = 0
         .Bold = False
     End With
 
-    'Clean content
-    Range("C2:C28").Select
-    Selection.ClearContents
+    ' Clean content
+    ws.Range("C2:C28").ClearContents
 
     ' Delete date
-    Range("E1").Select
-    Selection.ClearContents
+    ws.Range("E1").ClearContents
+
+    ' Fill time and draw lines again
+    Call Fill_Time_Slots
+    Call Make_Lines_Today
 
 End Sub
 
@@ -1010,6 +1023,8 @@ Private Sub Fill_Time_Slots()
         row = row + 1
     Loop
 End Sub
+
+
 
 
 
