@@ -985,14 +985,14 @@ Private Sub Clean_Today()
     Call Background_White
     
     ' Black font
-    With ws.Rows("2:28").Font
+    With ws.Rows("2:33").Font
         .ColorIndex = xlAutomatic
         .TintAndShade = 0
         .Bold = False
     End With
 
     ' Clean content
-    ws.Range("C2:C28").ClearContents
+    ws.Range("C2:C33").ClearContents
 
     ' Delete date
     ws.Range("E1").ClearContents

@@ -34,7 +34,7 @@ Several buttons are added to help you manage tasks easily:
     - Fills empty Hide cells with `0`
     - Highlights tasks due today in red
 
-- "hide low": Hide tasks with low importance (<100).
+- "hide low": Hides tasks with low importance (<100).
 
 - "sort time": Sorts only by the `Time needed` column.
 
