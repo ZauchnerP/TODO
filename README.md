@@ -24,6 +24,7 @@ The VBA script creates a structured Excel sheet with the following columns:
 | **Task**             | Text      | Description of what needs to be done.                                                                                                                         |
 | **When**             | Date/Text | Due date or schedule indicator.                                                                                                                               |
 | **Hide**             | 0/1       | 0 = visible, 1 = hidden when using the "hide" button.                                                                                                    |
+| **Where**            | Text      | The place or setting required to complete the task.                   |
 
 ## Buttons of the to-do list
 
@@ -34,7 +35,7 @@ Several buttons are added to help you manage tasks easily:
     - Fills empty Hide cells with `0`
     - Highlights tasks due today in red
 
-- "hide low": Hides tasks with low importance (<100).
+- "hide low": Hides tasks with low importance (greater than 0 and less than 100).
 
 - "sort time": Sorts only by the `Time needed` column.
 
