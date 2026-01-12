@@ -51,6 +51,10 @@ Several buttons are added to help you manage tasks easily:
 - "set 0": Sets all visible `Hide` cells to `0`.
     Hidden rows will not be affected — make sure filters are off before using.
 
+- "plus 1": Increases each value in column B (importance) by 1, excluding cells with a value of 0.
+
+- "minus 1": Decreases each value in column B (importance) by 1, excluding cells with a value of 0 or 1.
+
 # 2) Day Planner
 
 While the to-do list helps track tasks across days or months,

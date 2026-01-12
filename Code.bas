@@ -15,25 +15,30 @@ Public Const COL_WHERE As Long = 9
 ' User interface
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-Sub Create_TODO_sheet()
-    '''' Create the TODO list ''''
-    ' this function runs all the functions below. You only need to run this one.
+Sub Create_To_Do_Sheet()
+    ''' Create the to-do list. '''
 
     ' Initialize
     Dim ws As Worksheet
     Set ws = ActiveSheet
 
+    ' Check if sheet is empty
+    If Application.WorksheetFunction.CountA(ws.UsedRange) > 0 Then
+        MsgBox "The current sheet is not empty. Please create the to-do list on an empty sheet."
+        Exit Sub
+    End If
+
     ' Make white background
     Call Background_White
 
-    ' Make first row to a two-liner
-    Rows("1:1").RowHeight = 36
+    ' Mncrease first-row height for two-line headers
+    ws.Rows("1:1").RowHeight = 36
 
     ' Freeze the first two rows
     Call Freeze_R_1_2
 
     ' Fill headers
-    Call Create_TODO_Header
+    Call Create_to_do_Header
 
     ' Add a bottom border after the second row
     Call AddBottomBorderAfterRow2
@@ -73,7 +78,7 @@ Sub Create_Today_sheet()
 
 End Sub
 
-Private Sub Create_TODO_Header()
+Private Sub Create_to_do_Header()
     ''' Fill the headers in row 2 '''
 
     ' Initialize
@@ -203,7 +208,7 @@ Private Sub AddBottomBorderAfterRow1()
 End Sub
 
 Private Sub AddBottomBorderAfterRow2()
-    ''' Add a bottom border after second row (header) in the TODO list'''
+    '''Add a bottom border below the second row (the header) in the to-do list '''
 
     ' Initialize
     Dim ws As Worksheet
@@ -221,7 +226,7 @@ Private Sub AddBottomBorderAfterRow2()
 End Sub
 
 Private Sub Freeze_R_1_2()
-    ''' Freeze the first two rows in a "TODO" sheet '''
+    ''' Freeze the first two rows in a to-do sheet '''
 
     With ActiveWindow
         .SplitColumn = 0
@@ -246,6 +251,7 @@ End Sub
 
 Private Sub Create_All_Buttons()
     '''' Create all buttons in the worksheet '''
+
     Call Create_Sort_All_Button
     Call Create_Hide_Low_Button
     Call Create_Sort_Time_Button
@@ -253,6 +259,7 @@ Private Sub Create_All_Buttons()
     Call Create_Hide_Dependence_Button
     Call Create_Show_All_Button
     Call Create_Hide_Buttons
+    Call Create_MinusPlus_1_Buttons
 
 End Sub
 
@@ -267,11 +274,6 @@ Private Sub Create_Sort_All_Button()
 
     Set ws = ActiveSheet
     Set targetCell = ws.Range("A1")
-
-    ' Delete existing shape if it exists
-    On Error Resume Next
-        ws.Shapes("Sort_All").Delete
-    On Error GoTo 0
 
     ' Add a button
     Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
@@ -302,11 +304,6 @@ Private Sub Create_Hide_Low_Button()
     Set ws = ActiveSheet
     Set targetCell = ws.Range("B1")
 
-    ' Delete existing shape if it exists
-    On Error Resume Next
-    ws.Shapes("Hide_Low").Delete
-    On Error GoTo 0
-
     ' Add a button
     Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
         targetCell.Left, targetCell.Top, targetCell.Width, targetCell.Height)
@@ -335,19 +332,14 @@ Private Sub Create_Lines_Button()
     Set ws = ActiveSheet
     Set targetCell = ws.Range("D1")
 
-    ' Delete existing shape if it exists
-    On Error Resume Next
-    ws.Shapes("Make_Lines_TODO").Delete
-    On Error GoTo 0
-
     ' Add a button
     Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
         targetCell.Left, targetCell.Top, targetCell.Width, targetCell.Height)
 
     With shp
-        .Name = "Make_Lines_TODO"
+        .Name = "Make_Lines_TO_DO"
         .TextFrame2.TextRange.Text = "lines"
-        .OnAction = "Make_Lines_TODO"
+        .OnAction = "Make_Lines_TO_DO"
     End With
 
     ' Apply global style
@@ -367,11 +359,6 @@ Private Sub Create_Sort_Time_Button()
 
     Set ws = ActiveSheet
     Set targetCell = ws.Range("C1")
-
-    ' Delete existing shape if it exists
-    On Error Resume Next
-    ws.Shapes("Sort_Time").Delete
-    On Error GoTo 0
 
     ' Add a button
     Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
@@ -398,11 +385,6 @@ Private Sub Create_Hide_Dependence_Button()
 
     Set ws = ActiveSheet
     Set targetCell = ws.Range("E1")
-
-    ' Delete existing shape if it exists
-    On Error Resume Next
-    ws.Shapes("Hide_Dependence").Delete
-    On Error GoTo 0
 
     ' Add a button
     Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
@@ -431,11 +413,6 @@ Private Sub Create_Show_All_Button()
     Set ws = ActiveSheet
     Set targetCell = ws.Range("F1")
 
-    ' Delete existing shape if it exists
-    On Error Resume Next
-    ws.Shapes("Show_All").Delete
-    On Error GoTo 0
-
     ' Add a button
     Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
         targetCell.Left, targetCell.Top, targetCell.Width, targetCell.Height)
@@ -461,11 +438,6 @@ Private Sub Create_Clean_Today_Button()
 
     Set ws = ActiveSheet
     Set targetCell = ws.Range("D2:E2")
-
-    ' Delete existing shape if it exists
-    On Error Resume Next
-    ws.Shapes("Clean_Today").Delete
-    On Error GoTo 0
 
     ' Add a button
     Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
@@ -503,12 +475,6 @@ Private Sub Create_Hide_Buttons()
     cellHeight = cell.Height
     halfHeight = cellHeight / 2
 
-    ' Delete old buttons if they exist
-    On Error Resume Next
-    ws.Shapes("Hide_Hide").Delete
-    ws.Shapes("Set0").Delete
-    On Error GoTo 0
-
     ' Create top button
     Set topBtn = ws.Shapes.AddShape(msoShapeRoundedRectangle, cellLeft, cellTop, cellWidth, halfHeight)
     With topBtn
@@ -536,7 +502,56 @@ Private Sub Create_Hide_Buttons()
     End With
 End Sub
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+Private Sub Create_MinusPlus_1_Buttons()
+    ''' Create Minus_1 and Plus_1 buttons that add and subtract from the importance column '''
+    ' Initialize
+    Dim ws As Worksheet
+    Dim cell As Range
+    Dim leftBtn As Shape, rightBtn As Shape
+    Dim cellTop As Double, cellLeft As Double, cellWidth As Double, cellHeight As Double
+    Dim halfWidth As Double
+
+    Set ws = ActiveSheet
+    Set cell = ws.Range("I1")
+
+    ' Get cell dimensions
+    cellTop = cell.Top
+    cellLeft = cell.Left
+    cellWidth = cell.Width
+    cellHeight = cell.Height
+    halfHeight = cellHeight / 2
+
+    ' Create top button (Plus_1)
+    Set topBtn = ws.Shapes.AddShape(msoShapeRoundedRectangle, cellLeft, cellTop, cellWidth, halfHeight)
+    With topBtn
+        .Name = "Plus_1_Button"
+        .TextFrame2.TextRange.Text = "plus 1"
+        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(0, 0, 0)
+        .Fill.ForeColor.RGB = RGB(220, 220, 220)
+        .Line.ForeColor.RGB = RGB(0, 0, 0)
+        .OnAction = "Plus_One"
+        .TextFrame2.VerticalAnchor = msoAnchorMiddle
+        .TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
+    End With
+
+    ' Create bottom button
+    Set bottomBtn = ws.Shapes.AddShape(msoShapeRoundedRectangle, cellLeft, cellTop + halfHeight, cellWidth, halfHeight)
+    With bottomBtn
+        .Name = "Minus_1_Button"
+        .TextFrame2.TextRange.Text = "minus 1"
+        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(0, 0, 0)
+        .Fill.ForeColor.RGB = RGB(220, 220, 220)
+        .Line.ForeColor.RGB = RGB(0, 0, 0)
+        .OnAction = "Minus_One"
+        .TextFrame2.VerticalAnchor = msoAnchorMiddle
+        .TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
+    End With
+
+End Sub
+
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ' Actions
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
@@ -551,8 +566,8 @@ Private Sub Main_Sort()
     ' Fill column H
     Call Insert_0_Hide
 
-    ' Sort the TODO list
-    Call Sort_TODO
+    ' Sort the to-do list
+    Call Sort_To_Do
 
     ' Colors
     Call Importance_Zero
@@ -561,7 +576,7 @@ Private Sub Main_Sort()
 
 End Sub
 
-Private Sub Sort_TODO()
+Private Sub Sort_To_Do()
     ''' Sort the sheet by columns B, C, D, and E
     ' (importance, time, emotion, dependence), ascending. 
     '''
@@ -737,7 +752,7 @@ Private Sub Hide_Low()
 
 End Sub
 
-Private Sub Make_Lines_TODO()
+Private Sub Make_Lines_TO_DO()
     ''' Clear existing bottom borders and reapply dotted grey ones for non-empty rows '''
 
     ' Initialize
@@ -891,7 +906,7 @@ Private Sub Set_Hide_0()
     ws.Range(ws.Cells(3, COL_HIDE), ws.Cells(lastRow, COL_HIDE)).Value = "0"
 End Sub
 
-Private Sub Color_Category
+Private Sub Color_Category()
     ''' Colorize the rows depending on the categories in column A  '''
 
     ' Initialize
@@ -971,8 +986,8 @@ Private Sub Insert_0_Hide()
 End Sub
 
 Private Sub Today_Red()
-    ''' Apply conditional formatting to column G ("When") in the active TODO sheet.
-    ' After this procedure is run once within Create_TODO_sheet, 
+    ''' Apply conditional formatting to column G ("When") in the active to-do sheet.
+    ' After this procedure is run once within Create_To_Do_Sheet, 
     ' any cell in column G that contains today's date will be 
     ' highlighted automatically when entered.
     '''
@@ -1035,7 +1050,7 @@ End Sub
 
 Private Sub Clean_Today()
     ''' Clean the "Today" sheet.
-    ' Removes all entries and formatting from the "Today" sheet
+    ' Removes all entries and formatting from the "Today" sheet.
     '''
 
     ' Initialize
@@ -1046,14 +1061,14 @@ Private Sub Clean_Today()
     Call Background_White
     
     ' Black font
-    With ws.Rows("2:33").Font
+    With ws.Rows("2:37").Font
         .ColorIndex = xlAutomatic
         .TintAndShade = 0
         .Bold = False
     End With
 
     ' Clean content
-    ws.Range("C2:C33").ClearContents
+    ws.Range("C2:C37").ClearContents
 
     ' Delete date
     ws.Range("E1").ClearContents
@@ -1088,7 +1103,47 @@ Private Sub Fill_Time_Slots()
     Loop
 End Sub
 
+Private Sub Plus_One()
+    ''' Add 1 to each cell in column B (importance), excluding cells with a value of 0'''
+
+    ' Initialize
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim r As Long
+    Dim val As Variant
+    
+    Set ws = ActiveSheet
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
 
 
+    For r = 3 To lastRow
+        val = ws.Cells(r, COL_IMP).Value
+
+        If IsNumeric(val) And val <> 0 Then
+            ws.Cells(r, COL_IMP).Value = val + 1
+        End If
+    Next r
+End Sub
 
 
+Private Sub Minus_One()
+    ''' Subtract 1 from each cell in column B (importance), excluding cells with a value of 0 or 1 '''
+
+    ' Initialize
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim r As Long
+    Dim val As Variant  
+
+    Set ws = ActiveSheet
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
+
+
+    For r = 3 To lastRow
+        val = ws.Cells(r, COL_IMP).Value
+
+        If IsNumeric(val) And val <> 1 And val <> 0 Then
+            ws.Cells(r, COL_IMP).Value = val - 1
+        End If
+    Next r
+End Sub
