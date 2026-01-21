@@ -61,7 +61,7 @@ While the to-do list helps track tasks across days or months,
 the day planner focuses on structuring a single day.
 It provides a clear, time-blocked layout to schedule your tasks.
 
-At the end of the day, you can use the "clean today" button to clear all
+At the end of the day, you can use the "clean day" button to clear all
 entries and formatting in columns `A` to `C`, without affecting the rest of the sheet.
 
 ![Picture of day planner](Today_figure.png "Day planner")
@@ -86,7 +86,7 @@ entries and formatting in columns `A` to `C`, without affecting the rest of the 
 ## Running the code
 
 In the module, locate the function `Create_TODO_sheet()` to create a to-do
-list and `Create_Today_sheet()` to create the TODAY sheet.
+list and `Create_Day_Sheet()` to create the DAY sheet.
 Place the cursor inside it and click the green run button.
 Important: You need to have an empty Excel file activated,
 otherwise, your entries might get overwritten.

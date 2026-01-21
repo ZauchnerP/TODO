@@ -1,15 +1,33 @@
+Public Const COLOR_BG As Long = 16777215 ' White
+Public Const COLOR_TEXTRANGE As Long = 0 ' Black
+Public Const COLOR_BG_UNIMP As Long = 16316664 ' Light grey
+Public Const COLOR_TEXTRANGE_UNIMP As Long = 6579300 ' Medium grey
+
+Public Const COLOR_BUTTON_BG_COLOR As Long = 14474460  ' 14474460 light grey ' 15129810 light blue
+Public Const COLOR_COLOR_BUTTON_TEXTFRAME As Long = 0 ' Black
+Public Const COLOR_BUTTON_TEXTRANGE As Long = 0 ' Black
+Public Const COLOR_LINES_SUB As Long = 11842740 ' Light grey
+Public Const COLOR_LINES_MAIN As Long = 0 ' Black
+
+
+' To-do (T) constants
 Public Const MAX_COL_LETTER As String = "I"  ' "Where"
 Public Const MAX_COL As Long = 9 ' Column I
-
 Public Const COL_CATEGORY As Long = 1
 Public Const COL_IMP As Long = 2
 Public Const COL_TIME As Long = 3
 Public Const COL_EMOTION As Long = 4
-Public Const COL_DEPENDENCE As Long = 5
+Public Const COL_DEP As Long = 5
 Public Const COL_TASK As Long = 6
 Public Const COL_WHEN As Long = 7
 Public Const COL_HIDE As Long = 8
 Public Const COL_WHERE As Long = 9
+Public Const ROW_CONTENT_START_T As Long = 3
+
+' Day (D) constants
+Public Const ROW_HEADER_D As Long = 2
+Public Const ROW_CONTENT_START_D As Long = 3
+
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ' User interface
@@ -29,25 +47,25 @@ Sub Create_To_Do_Sheet()
     End If
 
     ' Make white background
-    Call Background_White
+    Call Set_Background_White
 
     ' Mncrease first-row height for two-line headers
     ws.Rows("1:1").RowHeight = 36
 
     ' Freeze the first two rows
-    Call Freeze_R_1_2
+    Call Freeze_Header_Row_2
 
     ' Fill headers
     Call Create_to_do_Header
 
     ' Add a bottom border after the second row
-    Call AddBottomBorderAfterRow2
+    Call Set_Header_Border_T
 
     ' Create buttons
     Call Create_All_Buttons
 
     ' Save numbers as text in E "Dependence" (needed for sorting)
-    ws.Columns(COL_DEPENDENCE).NumberFormat = "@"
+    ws.Columns(COL_DEP).NumberFormat = "@"
 
     ' Activate Today-formatting
     Call Today_Red
@@ -57,24 +75,34 @@ Sub Create_To_Do_Sheet()
 
 End Sub
 
-Sub Create_Today_sheet()
-    '''' Create a sheet for today ''''
+Sub Create_Day_Sheet()
+    '''' Create a sheet for a day ''''
+
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+
+    ' Check if sheet is empty
+    If Application.WorksheetFunction.CountA(ws.UsedRange) > 0 Then
+        MsgBox "The current sheet is not empty. Please create the Today sheet on an empty sheet."
+        Exit Sub
+    End If
 
     ' Make white background
-    Call Background_White
+    Call Set_Background_White
 
     ' Make header
-    Call Create_Today_Header
-    Call AddBottomBorderAfterRow1
-    Call Freeze_R_1
+    Call Create_Header_D
+    Call Set_Header_Border_D
+    Call Freeze_Header_Row
 
     ' Make button
-    Call Create_Clean_Today_Button
+    Call Create_Clean_Button_D
+    Call Create_Time_Button_D
+    Call Create_Time_Undo_Button_D
 
     ' Fill time slots
-    Call Fill_Time_Slots
-    Call Make_Lines_Today
-
+    Call Create_Time_Slots
+    Call Set_Lines_Today
 
 End Sub
 
@@ -140,23 +168,23 @@ Private Sub Create_to_do_Header()
 
 End Sub
 
-Private Sub Create_Today_Header()
+Private Sub Create_Header_D()
     ''' Fill the headers in row 1 '''
 
     ' Initialize
     Dim ws As Worksheet
     Set ws = ActiveSheet
-
-    ' Define the values to write into row 1
+    Dim i As Integer
     Dim headers As Variant
+
+    ' Define headers  
     headers = Array("From", _
                     "To", _
-                    "Task", _
-                    "Date:")
+                    "Task")
 
-    Dim i As Integer
+    ' Fill headers
     For i = 0 To UBound(headers)
-        With ws.Cells(1, i + 1)
+        With ws.Cells(2, i + 1)
             .Value = headers(i)
             .Font.Bold = True
             .WrapText = True
@@ -166,16 +194,23 @@ Private Sub Create_Today_Header()
     ' Task column is a bit wider
     ws.Columns("C").ColumnWidth = 60
 
+    ' Date is in the previous row
+    With ws.Cells(1, 4)
+        .value = "Date:"
+        .Font.Bold = True
+        .WrapText = True
+    End With
+
 End Sub
 
 Private Sub StyleMyShape(shp As Shape)
     ' Button settings
 
     With shp
-        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(0, 0, 0) ' black text
-        .Line.ForeColor.RGB = RGB(0, 0, 0) ' black border
+        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = COLOR_BUTTON_TEXTRANGE
+        .Line.ForeColor.RGB = COLOR_BUTTON_TEXTFRAME
         .Line.Visible = msoTrue
-        .Fill.ForeColor.RGB = RGB(220, 220, 220) ' light grey
+        .Fill.ForeColor.RGB = COLOR_BUTTON_BG_COLOR
 
         With .TextFrame2
             .MarginTop = 0
@@ -190,7 +225,7 @@ Private Sub StyleMyShape(shp As Shape)
 
 End Sub
 
-Private Sub AddBottomBorderAfterRow1()
+Private Sub Set_Header_Border_D()
     ''' Add a border to the header in the TODAY sheet '''
 
     ' Initialize
@@ -198,17 +233,18 @@ Private Sub AddBottomBorderAfterRow1()
     Dim targetRange As Range
 
     Set ws = ActiveSheet
-    Set targetRange = ws.Range(ws.Cells(1, 1), ws.Cells(1, 3))
+    Set targetRange = ws.Range(ws.Cells(ROW_HEADER_D, 1), _
+                               ws.Cells(ROW_HEADER_D, 3))
 
     With targetRange.Borders(xlEdgeBottom)
         .LineStyle = xlContinuous
         .Weight = xlMedium
-        .Color = RGB(0, 0, 0) ' black
+        .Color = COLOR_LINES_MAIN
     End With
 End Sub
 
-Private Sub AddBottomBorderAfterRow2()
-    '''Add a bottom border below the second row (the header) in the to-do list '''
+Private Sub Set_Header_Border_T()
+    '''Add a bottom border below the header row in the to-do list '''
 
     ' Initialize
     Dim ws As Worksheet
@@ -221,11 +257,11 @@ Private Sub AddBottomBorderAfterRow2()
     With targetRange.Borders(xlEdgeBottom)
         .LineStyle = xlContinuous
         .Weight = xlMedium
-        .Color = RGB(0, 0, 0) ' black
+        .Color = COLOR_LINES_MAIN
     End With
 End Sub
 
-Private Sub Freeze_R_1_2()
+Private Sub Freeze_Header_Row_2()
     ''' Freeze the first two rows in a to-do sheet '''
 
     With ActiveWindow
@@ -235,7 +271,7 @@ Private Sub Freeze_R_1_2()
     End With
 End Sub
 
-Private Sub Freeze_R_1()
+Private Sub Freeze_Header_Row()
     ''' Freeze the first row in a "Today" sheet'''
 
     With ActiveWindow
@@ -384,7 +420,7 @@ Private Sub Create_Hide_Dependence_Button()
     Dim shp As Shape
 
     Set ws = ActiveSheet
-    Set targetCell = ws.Range("E1")
+    Set targetCell = ws.Range("D1")
 
     ' Add a button
     Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
@@ -419,17 +455,18 @@ Private Sub Create_Show_All_Button()
 
     With shp
         .Name = "Show_All"
-        .Line.ForeColor.RGB = RGB(0, 0, 0) ' black border
+        .Line.ForeColor.RGB = COLOR_BUTTON_TEXTFRAME
         .TextFrame2.TextRange.Text = "show all"
         .OnAction = "Reset_Filters"
 
     End With
 
-    Call StyleMyShape(shp) ' Apply global style
+    ' Apply global style
+    Call StyleMyShape(shp) 
 End Sub
 
-Private Sub Create_Clean_Today_Button()
-    ''' Create the "clean today" button '''
+Private Sub Create_Clean_Button_D()
+    ''' Create the "clean day" button '''
 
     ' Initialize
     Dim ws As Worksheet
@@ -437,7 +474,7 @@ Private Sub Create_Clean_Today_Button()
     Dim shp As Shape
 
     Set ws = ActiveSheet
-    Set targetCell = ws.Range("D2:E2")
+    Set targetCell = ws.Range("A1:B1")
 
     ' Add a button
     Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
@@ -445,7 +482,7 @@ Private Sub Create_Clean_Today_Button()
 
     With shp
         .Name = "Clean_Today"
-        .Line.ForeColor.RGB = RGB(0, 0, 0) ' black border
+        .Line.ForeColor.RGB = COLOR_BUTTON_TEXTFRAME
         .TextFrame2.TextRange.Text = "clean today"
         .OnAction = "Clean_Today"
 
@@ -454,6 +491,73 @@ Private Sub Create_Clean_Today_Button()
     ' Apply global style
     Call StyleMyShape(shp) 
 End Sub
+
+Private Sub Create_Time_Button_D()
+    ''' Create the "time filter" button '''
+    'TODO noch in README eingeben!
+
+
+    ' Initialize
+    Dim ws As Worksheet
+    Dim targetCell As Range
+    Dim shp As Shape
+
+    Set ws = ActiveSheet
+    Set targetCell = ws.Range("C1:C1")
+
+    ' Add a button
+    Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
+        targetCell.Left, _
+        targetCell.Top, _
+        targetCell.Width / 2, _
+        targetCell.Height)
+
+    With shp
+        .Name = "Select_Time"
+        .Line.ForeColor.RGB = COLOR_BUTTON_TEXTFRAME
+        .TextFrame2.TextRange.Text = "time filter"
+        .OnAction = "Select_Time"
+
+    End With
+
+    ' Apply global style
+    Call StyleMyShape(shp) 
+End Sub
+
+Private Sub Create_Time_Undo_Button_D()
+    ''' Create the "Reset time filter" button '''
+    'TODO noch in README eingeben! Besseren Namen finden
+
+    ' Initialize
+    Dim ws As Worksheet
+    Dim targetCell As Range
+    Dim shp As Shape
+    Dim baseBtn As Shape
+
+    Set ws = ActiveSheet
+    Set targetCell = ws.Range("C1:C1")
+    Set baseBtn = ws.Shapes("Select_Time")  
+
+    ' Add a button
+    Set shp = ws.Shapes.AddShape(msoShapeRoundedRectangle, _
+        baseBtn.Left + baseBtn.Width, _
+        targetCell.Top, _
+        targetCell.Width / 4, _
+        targetCell.Height)
+
+    With shp
+        .Name = "Undo_Time_Filter"
+        .Line.ForeColor.RGB = COLOR_BUTTON_TEXTFRAME
+        .TextFrame2.TextRange.Text = "filter off" ' TODO find better name
+        .AlternativeText = "Reset time filter"  ' TODO does not work yet
+        .OnAction = "Undo_Time_Filter" 
+    End With
+
+    ' Apply global style
+    Call StyleMyShape(shp) 
+End Sub
+
+
 
 Private Sub Create_Hide_Buttons()
     ''' Create the "hide" and "set 0" buttons '''
@@ -480,9 +584,9 @@ Private Sub Create_Hide_Buttons()
     With topBtn
         .Name = "Hide_Hide"
         .TextFrame2.TextRange.Text = "hide"
-        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(0, 0, 0)
-        .Fill.ForeColor.RGB = RGB(220, 220, 220)
-        .Line.ForeColor.RGB = RGB(0, 0, 0)
+        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = COLOR_BUTTON_TEXTRANGE
+        .Fill.ForeColor.RGB = COLOR_BUTTON_BG_COLOR
+        .Line.ForeColor.RGB = COLOR_BUTTON_TEXTFRAME
         .OnAction = "Hide"
         .TextFrame2.VerticalAnchor = msoAnchorMiddle
         .TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
@@ -493,9 +597,9 @@ Private Sub Create_Hide_Buttons()
     With bottomBtn
         .Name = "Set0"
         .TextFrame2.TextRange.Text = "set 0"
-        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(0, 0, 0)
-        .Fill.ForeColor.RGB = RGB(220, 220, 220)
-        .Line.ForeColor.RGB = RGB(0, 0, 0)
+        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = COLOR_BUTTON_TEXTRANGE
+        .Fill.ForeColor.RGB = COLOR_BUTTON_BG_COLOR
+        .Line.ForeColor.RGB = COLOR_BUTTON_TEXTFRAME
         .OnAction = "Set_Hide_0"
         .TextFrame2.VerticalAnchor = msoAnchorMiddle
         .TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
@@ -527,9 +631,9 @@ Private Sub Create_MinusPlus_1_Buttons()
     With topBtn
         .Name = "Plus_1_Button"
         .TextFrame2.TextRange.Text = "plus 1"
-        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(0, 0, 0)
-        .Fill.ForeColor.RGB = RGB(220, 220, 220)
-        .Line.ForeColor.RGB = RGB(0, 0, 0)
+        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = COLOR_BUTTON_TEXTRANGE
+        .Fill.ForeColor.RGB = COLOR_BUTTON_BG_COLOR
+        .Line.ForeColor.RGB = COLOR_BUTTON_TEXTFRAME
         .OnAction = "Plus_One"
         .TextFrame2.VerticalAnchor = msoAnchorMiddle
         .TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
@@ -540,9 +644,9 @@ Private Sub Create_MinusPlus_1_Buttons()
     With bottomBtn
         .Name = "Minus_1_Button"
         .TextFrame2.TextRange.Text = "minus 1"
-        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = RGB(0, 0, 0)
-        .Fill.ForeColor.RGB = RGB(220, 220, 220)
-        .Line.ForeColor.RGB = RGB(0, 0, 0)
+        .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = COLOR_BUTTON_TEXTRANGE
+        .Fill.ForeColor.RGB = COLOR_BUTTON_BG_COLOR
+        .Line.ForeColor.RGB = COLOR_BUTTON_TEXTFRAME
         .OnAction = "Minus_One"
         .TextFrame2.VerticalAnchor = msoAnchorMiddle
         .TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
@@ -593,35 +697,40 @@ Private Sub Sort_To_Do()
 
     ' Sort by E (dependence)
     ws.Sort.SortFields.Add2 _
-        Key:=ws.Range(ws.Cells(3, COL_DEPENDENCE), ws.Cells(lastRow, COL_DEPENDENCE)), _
+        Key:=ws.Range(ws.Cells(ROW_CONTENT_START_T, COL_DEP), _
+                      ws.Cells(lastRow, COL_DEP)), _
         SortOn:=xlSortOnValues, _
         Order:=xlAscending, _
         DataOption:=xlSortNormal
 
     ' Then by column B (importance)
     ws.Sort.SortFields.Add2 _
-        Key:=ws.Range(ws.Cells(3, COL_IMP), ws.Cells(lastRow, COL_IMP)), _
+        Key:=ws.Range(ws.Cells(ROW_CONTENT_START_T, COL_IMP), _
+                      ws.Cells(lastRow, COL_IMP)), _
         SortOn:=xlSortOnValues, _
         Order:=xlAscending, _
         DataOption:=xlSortNormal
 
     ' Then by column C (time)
     ws.Sort.SortFields.Add2 _
-        Key:=ws.Range(ws.Cells(3, COL_TIME), ws.Cells(lastRow, COL_TIME)), _
+        Key:=ws.Range(ws.Cells(ROW_CONTENT_START_T, COL_TIME), _
+                      ws.Cells(lastRow, COL_TIME)), _
         SortOn:=xlSortOnValues, _
         Order:=xlAscending, _
         DataOption:=xlSortNormal
 
     ' Then by column D (emotion)
     ws.Sort.SortFields.Add2 _
-        Key:=ws.Range(ws.Cells(3, COL_EMOTION), ws.Cells(lastRow, COL_EMOTION)), _
+        Key:=ws.Range(ws.Cells(ROW_CONTENT_START_T, COL_EMOTION), _
+                      ws.Cells(lastRow, COL_EMOTION)), _
         SortOn:=xlSortOnValues, _
         Order:=xlAscending, _
         DataOption:=xlSortNormal
 
     ' Configure and apply the sort operation
     With ws.Sort
-        .SetRange ws.Range(ws.Cells(3, 1), ws.Cells(lastRow, MAX_COL))
+        .SetRange ws.Range(ws.Cells(ROW_CONTENT_START_T, 1), _
+                  ws.Cells(lastRow, MAX_COL))
         .Header = xlNo
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -642,7 +751,7 @@ Private Sub Hide_Dependence()
 
     ' Filter
     With ws.Range(ws.Cells(2, 1), ws.Cells(lastRow, MAX_COL))
-        .AutoFilter Field:=COL_DEPENDENCE , _
+        .AutoFilter Field:=COL_DEP , _
         Criteria1:="=", _
         Operator:=xlOr, _
         Criteria2:="."
@@ -668,36 +777,39 @@ Private Sub Color_Importance_Time()
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
 
     ' Set to white first
-    ws.Columns(COL_IMP).Interior.Color = RGB(255, 255, 255)
-    ws.Columns(COL_TIME).Interior.Color = RGB(255, 255, 255)
+    ws.Columns(COL_IMP).Interior.Color = COLOR_BG
+    ws.Columns(COL_TIME).Interior.Color = COLOR_BG
 
     ''' COLOR column B: Importance ''''
-    Set rng = ws.Range(ws.Cells(3, COL_IMP), ws.Cells(lastRow, COL_IMP))
+    Set rng = ws.Range(ws.Cells(ROW_CONTENT_START_T, COL_IMP), _
+                       ws.Cells(lastRow, COL_IMP))
 
     ' Loop through each cell in the range
     For Each cell In rng
-        If cell.Value = 1 And _
-            cell.Offset(0, 3).Value = "." Then  ' No dependence
-            cell.Interior.Color = RGB(255, 255, 0) ' Yellow
 
-        ElseIf cell.Value = 2 And _
-            cell.Offset(0, 3).Value = "." Then  ' No dependence
-                    cell.Interior.Color = RGB(255, 100, 100)  ' Other color
+        If ws.Cells(cell.Row, COL_DEP).Value = "." Then  ' No dependence
 
-        ElseIf cell.Value > 2 And _
-            cell.Offset(0, 3).Value = "." Then  ' No dependence
-                    cell.Interior.Color = RGB(255, 255, 255)  ' White
+            If cell.Value = 1 Then 
+                cell.Interior.Color = RGB(255, 255, 0) ' Yellow
 
-        Else
-            ' Clear the interior color (not needed because of interdepence with other functions)
-            ' cell.Interior.Color = RGB(255, 255, 255)  ' White
+            ElseIf cell.Value = 2 Then  
+                cell.Interior.Color = RGB(255, 100, 100)  ' Other color
+
+            ElseIf cell.Value > 2  Then 
+                cell.Interior.Color = RGB(255, 255, 255)  ' White
+
+            Else
+                ' Clear the interior color (not needed because of interdepence with other functions)
+                ' cell.Interior.Color = RGB(255, 255, 255)  ' White
+            End If
         End If
 
     Next cell
 
     ''' COLOR column C: Time ''''
     ' Time is just colorized if it does not take too much emotional effort
-    Set rng = ws.Range(ws.Cells(3, COL_TIME), ws.Cells(lastRow, COL_TIME))
+    Set rng = ws.Range(ws.Cells(ROW_CONTENT_START_T, COL_TIME), _
+                       ws.Cells(lastRow, COL_TIME))
 
     ' Loop through each cell in the range
     For Each cell In rng
@@ -744,7 +856,9 @@ Private Sub Hide_Low()
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
 
     ' Apply filter starting at row 3, column 2
-    ws.Range(ws.Cells(3, 1), ws.Cells(lastRow, MAX_COL)).AutoFilter _
+    ' TODO Why does this work although there is a 1?
+    ws.Range(ws.Cells(ROW_CONTENT_START_T, 1), _  
+             ws.Cells(lastRow, MAX_COL)).AutoFilter _
             Field:=COL_IMP, _
             Criteria1:="<100", _
             Operator:=xlAnd, _
@@ -767,25 +881,25 @@ Private Sub Make_Lines_TO_DO()
     lastRowDelete = lastRow + 15  ' You can change this number, its just a very conservative assumption of deleted tasks within a short time frame.
 
     ' Clear all bottom borders in the target range
-    For r = 3 To lastRowDelete
+    For r = ROW_CONTENT_START_T To lastRowDelete
         ws.Range(ws.Cells(r, 1), ws.Cells(r, MAX_COL)).Borders(xlEdgeBottom).LineStyle = xlNone
     Next r
 
     ' Add borders only to non-empty rows
-    For r = 3 To lastRow
+    For r = ROW_CONTENT_START_T To lastRow
         If Application.WorksheetFunction.CountA( _
             ws.Range(ws.Cells(r, 1), ws.Cells(r, MAX_COL))) > 0 Then
             Set rng = ws.Range(ws.Cells(r, 1), ws.Cells(r, MAX_COL))
             With rng.Borders(xlEdgeBottom)
                 .LineStyle = xlDot
                 .Weight = xlThin
-                .Color = RGB(180, 180, 180) ' light grey
+                .Color = COLOR_LINES_SUB 
             End With
         End If
     Next r
 End Sub
 
-Private Sub Make_Lines_Today()
+Private Sub Set_Lines_Today()
     ''' Clear existing bottom borders and reapply dotted grey ones for non-empty rows '''
 
     ' Initialize
@@ -800,18 +914,18 @@ Private Sub Make_Lines_Today()
     lastRowDelete = lastRow + 15  ' You can change this number, its just a very conservative assumption of deleted tasks within a short time frame.
 
     ' Clear all bottom borders in the target range
-    For r = 2 To lastRowDelete
+    For r = ROW_CONTENT_START_D To lastRowDelete
         ws.Range("A" & r & ":C" & r).Borders(xlEdgeBottom).LineStyle = xlNone
     Next r
 
     ' Add borders only to non-empty rows
-    For r = 2 To lastRow
+    For r = ROW_CONTENT_START_D To lastRow
         If Application.WorksheetFunction.CountA(ws.Range("A" & r & ":C" & r)) > 0 Then
             Set rng = ws.Range("A" & r & ":C" & r)
             With rng.Borders(xlEdgeBottom)
                 .LineStyle = xlDot
                 .Weight = xlThin
-                .Color = RGB(180, 180, 180) ' light grey
+                .Color = COLOR_LINES_SUB
             End With
         End If
     Next r
@@ -830,16 +944,17 @@ Private Sub Sort_Time()
     ' Clear any existing sort fields to start fresh
     ws.Sort.SortFields.Clear
 
-    ' Add a sort field for column C (time), from row 2 to the last data row
+    ' Add a sort field for column C (time)
     ws.Sort.SortFields.Add2 _
-        Key:=ws.Range("C3:C" & lastRow), _
+        Key:=ws.Range("C" & ROW_CONTENT_START_T & ":C" & lastRow), _
         SortOn:=xlSortOnValues, _
         Order:=xlAscending, _
         DataOption:=xlSortNormal
 
     ' Configure and apply the sort operation
     With ws.Sort
-        .SetRange ws.Range(ws.Cells(3, 1), ws.Cells(lastRow, MAX_COL))
+        .SetRange ws.Range(ws.Cells(ROW_CONTENT_START_T, 1), _
+                           ws.Cells(lastRow, MAX_COL))
         .Header = xlNo
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -891,7 +1006,7 @@ End Sub
 
 Private Sub Set_Hide_0()
     ''' Set all values in the "Hide" column to 0.
-    ' Caution: this only sets values in rows 3 to lastRow to 0 if the row is not hidden.
+    ' Caution: this only sets values in the "Hide" column if the row is not hidden.
     '''
 
     ' Initialize
@@ -903,7 +1018,8 @@ Private Sub Set_Hide_0()
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
 
     ' Overwrite "Hide" column with 0
-    ws.Range(ws.Cells(3, COL_HIDE), ws.Cells(lastRow, COL_HIDE)).Value = "0"
+    ws.Range(ws.Cells(ROW_CONTENT_START_T, COL_HIDE), _
+             ws.Cells(lastRow, COL_HIDE)).Value = "0"
 End Sub
 
 Private Sub Color_Category()
@@ -920,20 +1036,21 @@ Private Sub Color_Category()
     Set rng = Range("A1:A" & lastRow)
 
     ' First white
-    ws.Columns("A").Interior.Color = RGB(255, 255, 255)
+    ws.Columns("A").Interior.Color = COLOR_BG
 
     ' Loop through each cell in the range
     For Each cell In rng
         If cell.Value = "Topic1" Then   ' TODO change to your category names
+
             cell.Interior.Color = RGB(255, 255, 0)  ' Yellow
 
         ElseIf cell.Value = "Topic2" Then ' TODO change to your category names
 
-                    cell.Interior.Color = RGB(255, 100, 100)  ' Red
+            cell.Interior.Color = RGB(255, 100, 100)  ' Red
 
         ElseIf cell.Value = "Topic3" Then ' TODO change to your category names
 
-                    cell.Interior.Color = RGB(100, 255, 255)  ' Turquoise
+            cell.Interior.Color = RGB(100, 255, 255)  ' Turquoise
 
         Else
             ' Same color as the cell right to it
@@ -957,9 +1074,9 @@ Private Sub Replace_Empty_Dependence()
     Set ws = ActiveSheet
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
 
-    For r = 3 To lastRow
-        If Trim(ws.Cells(r, 1).Value) <> "" And Trim(ws.Cells(r, COL_DEPENDENCE).Value) = "" Then
-            ws.Cells(r, COL_DEPENDENCE).Value = "."
+    For r = ROW_CONTENT_START_T To lastRow
+        If Trim(ws.Cells(r, 1).Value) <> "" And Trim(ws.Cells(r, COL_DEP).Value) = "" Then
+            ws.Cells(r, COL_DEP).Value = "."
         End If
     Next r
 End Sub
@@ -977,7 +1094,7 @@ Private Sub Insert_0_Hide()
     Set ws = ActiveSheet
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
 
-    For r = 3 To lastRow
+    For r = ROW_CONTENT_START_T To lastRow
         If Trim(ws.Cells(r, 1).Value) <> "" _
             And Trim(ws.Cells(r, COL_HIDE).Value) = "" Then
             ws.Cells(r, COL_HIDE).Value = "0"
@@ -1021,23 +1138,23 @@ Private Sub Importance_Zero()
     Set ws = ActiveSheet
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
 
-    For r = 3 To lastRow
+    For r = ROW_CONTENT_START_T To lastRow
         If ws.Cells(r, COL_IMP).Value = 0 And ws.Cells(r, COL_IMP).Text <> "" Then
             With ws.Range(ws.Cells(r, 1), ws.Cells(r, MAX_COL))
-                .Interior.Color = RGB(248, 248, 248) ' Light grey background
-                .Font.Color = RGB(100, 100, 100)     ' Medium grey text
+                .Interior.Color = COLOR_BG_UNIMP
+                .Font.Color = COLOR_TEXTRANGE_UNIMP
             End With
         Else
             With ws.Range(ws.Cells(r, 1), ws.Cells(r, MAX_COL))
-                .Interior.Color = RGB(255, 255, 255) ' White background
-                .Font.Color = RGB(0, 0, 0)     ' Black text
+                .Interior.Color = COLOR_BG
+                .Font.Color = COLOR_TEXTRANGE
             End With
         End If
     Next r
 
 End Sub
 
-Private Sub Background_White()
+Private Sub Set_Background_White()
     ''' Set background color of all used cells to white '''
 
     ' Initialize
@@ -1045,7 +1162,7 @@ Private Sub Background_White()
     Set ws = ActiveSheet
 
     ' Apply white background to entire used range
-    ws.Cells.Interior.Color = RGB(255, 255, 255)
+    ws.Cells.Interior.Color = COLOR_BG
 End Sub
 
 Private Sub Clean_Today()
@@ -1058,28 +1175,86 @@ Private Sub Clean_Today()
     Set ws = ActiveSheet
 
     ' White background
-    Call Background_White
+    Call Set_Background_White
     
     ' Black font
-    With ws.Rows("2:37").Font
+    With ws.Rows(ROW_HEADER_D + 1 & ":38").Font
         .ColorIndex = xlAutomatic
         .TintAndShade = 0
         .Bold = False
     End With
 
     ' Clean content
-    ws.Range("C2:C37").ClearContents
+    ws.Range("C" & ROW_HEADER_D + 1 & " :C38").ClearContents
 
     ' Delete date
     ws.Range("E1").ClearContents
 
+    ' Delete time
+    ws.Range("C1").ClearContents
+
+    ' Unhide everything
+    ws.Rows.Hidden = False
+    ws.Columns.Hidden = False
+
     ' Fill time and draw lines again
-    Call Fill_Time_Slots
-    Call Make_Lines_Today
+    Call Create_Time_Slots
+    Call Set_Lines_Today
 
 End Sub
 
-Private Sub Fill_Time_Slots()
+
+Private Sub Select_Time()
+    ''' Show rows values from now onwards in the TODAY sheet. 
+    ' Hides all rows for vergangene hours '''
+
+    ' Initialize
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    Dim nowTime As Date
+    Dim lastRow As Long
+    Dim r As Long
+    Dim cellTime As Variant
+
+    ' Show the current time in C1
+    nowTime = Time
+    With ws.Range("C1")
+        .Value = Format(nowTime, "HH:MM")
+        .HorizontalAlignment = xlRight
+    End With    
+
+    ' Hide all previous times
+    ' Find last used row in column A
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    Application.ScreenUpdating = False
+    For r = ROW_CONTENT_START_D To lastRow 
+
+        cellTime = ws.Cells(r, "B").Value
+        Debug.Print TypeName(cellTime), cellTime
+
+        If IsNumeric(cellTime) Then
+            Debug.Print("heere")
+            If cellTime < TimeValue(nowTime) Then
+                ws.Rows(r).Hidden = True
+            Else
+                ws.Rows(r).Hidden = False
+            End If
+        End If
+
+    Next r
+    Application.ScreenUpdating = True
+
+End Sub
+
+Private Sub Undo_Time_Filter()
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    ws.Rows.Hidden = False
+    ws.Range("C1").ClearContents
+End Sub 
+
+Private Sub Create_Time_Slots()
     ''' Fill time slots in the "Today" sheet '''
 
     ' Initialize
@@ -1091,7 +1266,7 @@ Private Sub Fill_Time_Slots()
     Set ws = ActiveSheet
     startTimeA = TimeValue("08:00")
     startTimeB = TimeValue("08:30")
-    row = 2
+    row = ROW_CONTENT_START_D
 
     Do While startTimeA <= TimeValue("23:40")
         ws.Cells(row, 1).Value = Format(startTimeA, "hh:mm")
@@ -1116,7 +1291,7 @@ Private Sub Plus_One()
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
 
 
-    For r = 3 To lastRow
+    For r = ROW_CONTENT_START_T To lastRow
         val = ws.Cells(r, COL_IMP).Value
 
         If IsNumeric(val) And val <> 0 Then
@@ -1139,7 +1314,7 @@ Private Sub Minus_One()
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row
 
 
-    For r = 3 To lastRow
+    For r = ROW_CONTENT_START_T To lastRow
         val = ws.Cells(r, COL_IMP).Value
 
         If IsNumeric(val) And val <> 1 And val <> 0 Then
