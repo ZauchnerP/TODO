@@ -14,8 +14,9 @@ high-priority items, or tasks from specific categories.
 
 The VBA script creates a structured Excel sheet with the following columns:
 
-| Column               | Type      | Description                                                                                                                                                   |
-| -------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Column               | Type      | Description |
+|---|---|---|
+| **Del **                   | x/check   | In the row control column, you can use special marker values that determine whether a row should be deleted ("x") or whether only selected rows should be displayed ("check").|
 | **Category**         | Text      | The category of your task. *(Required for the buttons to work)*                                                                                                                       |
 | **Importance**       | Number    | Priority level: 1 = important. If set to 0, the task is not a real to-do, but something to keep in mind. Rows with value 0 are marked light grey. Value 1 cells are marked yellow. Value 2 cells are marked red as soon as you sort the document via "sort documents."|
 | **Time needed**      | Number    | Estimated time required (unit-free: e.g., 1 = short, 100 = long).                                                                                              |

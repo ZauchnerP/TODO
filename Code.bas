@@ -122,7 +122,7 @@ Sub Create_Day_Sheet()
 End Sub
 
 Private Sub Create_to_do_Header()
-    ''' Fill the headers in row 2 '''
+    ''' Fill the headers '''
 
     ' Initialize
     Dim ws As Worksheet
@@ -574,7 +574,7 @@ Private Sub Create_MinusPlus_1_Buttons()
     Dim topBtn As Shape
     Dim bottomBtn As Shape
     Dim cellTop As Double, cellLeft As Double, cellWidth As Double, cellHeight As Double
-    Dim halfWidth As Double
+    Dim halfHeight As Double
 
     Set ws = ActiveSheet
     Set cell = ws.Cells(1, PLUS_1_BUTTON)
@@ -804,7 +804,6 @@ Private Sub Focus_Rows()
 
     ' Find last used row in column A
     lastRow = ws.Cells(ws.Rows.Count, COL_TASK).End(xlUp).Row
-    Debug.Print "Last row in Focus_Rows: " & lastRow
 
     ' Check if any cell in column A contains FOCUS_VALUE
     Dim hasFocus As Boolean
@@ -830,9 +829,7 @@ Private Sub Focus_Rows()
         ws.Rows.Hidden = False
     End If
 
-
 End Sub
-
 
 
 Private Sub Sort_To_Do()
@@ -858,7 +855,6 @@ Private Sub Sort_To_Do()
         SortOn:=xlSortOnValues, _
         Order:=xlAscending, _
         DataOption:=xlSortNormal
-
 
     ' Then by importance
     ws.Sort.SortFields.Add2 _
@@ -924,7 +920,7 @@ End Sub
 
 Private Sub Color_Importance_Time()
     '''
-    ' Colorize column B (importance) and C (time needed) cells if
+    ' Colorize column 'importance' and 'time needed' cells if
     ' a task is important or quick to do.
     ' Both are just colorized if they do not depend on other tasks.
     ' Time is just colorized when the task does not require too much emotional effort.
@@ -944,7 +940,7 @@ Private Sub Color_Importance_Time()
     ws.Columns(COL_IMP).Interior.Color = COLOR_BG
     ws.Columns(COL_TIME).Interior.Color = COLOR_BG
 
-    ''' COLOR column B: Importance ''''
+    ''' COLOR column 'importance': ''''
     Set rng = ws.Range( _
         ws.Cells(ROW_CONTENT_START_T, COL_IMP), _
         ws.Cells(lastRow, COL_IMP))
@@ -971,7 +967,7 @@ Private Sub Color_Importance_Time()
 
     Next cell
 
-    ''' COLOR column C: Time ''''
+    ''' COLOR column 'time needed': ''''
     ' Time is just colorized if it does not take too much emotional effort
     Set rng = ws.Range(ws.Cells(ROW_CONTENT_START_T, COL_TIME), _
                        ws.Cells(lastRow, COL_TIME))
@@ -1020,11 +1016,17 @@ Private Sub Hide_Low()
     Set ws = ActiveSheet
     lastRow = ws.Cells(ws.Rows.Count, COL_TASK).End(xlUp).row
 
+    Dim firstFilterCol As Long
+    Dim relativeField As Long
+
+    firstFilterCol = ws.AutoFilter.Range.Column
+    relativeField = COL_IMP - firstFilterCol + 1
+
     ' Apply filter starting at row 3, column 2
     ' TODO Why does this work although there is a 1?
-    ws.Range(ws.Cells(ROW_CONTENT_START_T, 1), _
+    ws.Range(ws.Cells(2, 1), _
              ws.Cells(lastRow, MAX_COL)).AutoFilter _
-        Field:=COL_IMP, _
+        Field:=relativeField, _
             Criteria1:="<100", _
         Operator:=xlAnd, _
             Criteria2:="<>0"
@@ -1205,7 +1207,8 @@ Private Sub Color_Category()
 
     Set ws = ActiveSheet
     lastRow = ws.Cells(ws.Rows.Count, COL_TASK).End(xlUp).row
-    Set rng = Range("A1:A" & lastRow)
+    Set rng = ws.Range(ws.Cells(ROW_CONTENT_START_T, COL_CATEGORY), _
+                    ws.Cells(lastRow, COL_CATEGORY))
 
     ' Reset colors first
     rng.Interior.Color = COLOR_BG
@@ -1263,7 +1266,7 @@ Private Sub Insert_0_Hide()
     lastRow = ws.Cells(ws.Rows.Count, COL_TASK).End(xlUp).row
 
     For r = ROW_CONTENT_START_T To lastRow
-        If Trim(ws.Cells(r, 1).Value) <> "" _
+        If Trim(ws.Cells(r, COL_TASK).Value) <> "" _
             And Trim(ws.Cells(r, COL_HIDE).Value) = "" Then
             ws.Cells(r, COL_HIDE).Value = "0"
         End If
@@ -1271,22 +1274,23 @@ Private Sub Insert_0_Hide()
 End Sub
 
 Private Sub Today_Red()
-    ''' Apply conditional formatting to column G ("When") in the active to-do sheet.
+    ''' Apply conditional formatting to column "When" in the active to-do sheet.
     ' After this procedure is run once within Create_To_Do_Sheet,
-    ' any cell in column G that contains today's date will be
+    ' any cell in column "When" that contains today's date will be
     ' highlighted automatically when entered.
     '''
 
-    ' Initialize
     Dim fc As FormatCondition
+    Dim colLetter As String
+
+    colLetter = Split(ActiveSheet.Cells(1, COL_WHEN).Address, "$")(1)
 
     With ActiveSheet.Columns(COL_WHEN)
         .FormatConditions.Delete
 
         Set fc = .FormatConditions.Add( _
-            Type:=xlCellValue, _
-            Operator:=xlEqual, _
-            Formula1:="=" & CLng(Date))
+            Type:=xlExpression, _
+            Formula1:="=INT(" & colLetter & "1)=TODAY()")
 
         fc.Font.Color = -16383844
         fc.Interior.Color = 13551615
@@ -1313,13 +1317,6 @@ Private Sub Importance_Zero()
             With ws.Range(ws.Cells(r, 1), ws.Cells(r, MAX_COL))
                 .Interior.Color = COLOR_BG_UNIMP
                 .Font.Color = COLOR_TEXTRANGE_UNIMP
-            End With
-        Else
-            With ws.Range(ws.Cells(r, 1), _
-                 ws.Cells(r, MAX_COL))
-
-                .Interior.Color = COLOR_BG
-                .Font.Color = COLOR_TEXTRANGE
             End With
         End If
     Next r
